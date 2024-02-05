@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        #flashcard {
+            border: 1px solid black;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+        }
+
+        .metadata {
+            color: #888;
+            /* change the color to a light gray */
+            display: block;
+            /* change to block */
+            margin-top: 20px;
+            /* add space above the metadata */
+            text-align: center;
+            /* center the text */
+
+        }
+
+        .metadata h6 {
+            margin: 0;
+            /* remove the default margin */
+            display: inline;
+            /* make the h6 elements inline */
+        }
+
+        .metadata h6:not(:last-child)::after {
+            content: ', ';
+            /* add a comma after each h6 except the last one */
+        }
+
+        input[type="checkbox"] {
+            transform: scale(1.5);
+        }
+
+        #answer {
+            text-align: left;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        .clearButton {
+            font-size: 0.8em;
+            /* adjust as needed */
+            padding: 5px 5px;
+            /* adjust as needed */
+            transform: scale(0.8);
+            /* Make the buttons tinier */
+            vertical-align: middle;
+            /* Align the buttons vertically in the middle */
+
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-button {
+            margin: 0 10px;
+        }
+
+        #question {
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="levelFilters"></div>
+    <hr>
+    <div id="volumeFilters"></div>
+    <hr>
+    <div id="topicFilters"></div>
+    <hr>
+    <div id="moduleFilters"></div>
+    <hr>
+    <p id="numResults"></p>
+    <hr>
+    <div class="button-container">
+        <button class="app-button" onclick="showAnswer()">Show Answer</button>
+
+        <button class="app-button" onclick="nextCard()">Next</button>
+    </div>
+    <div id="flashcard">
+        <p style="font-weight: bold; text-align: left; font-size: large;">Question</p>
+        <p id="question"></p>
+        <hr>
+        <p style="font-weight: bold; text-align: left; font-size: large;">Answer</p>
+        <p id="answer" style="display: none;"></p>
+
+        <div class="metadata" id="metadata">
+            <h6 id="level"></h6>
+            <h6 id="volume"></h6>
+            <h6 id="topic"></h6>
+            <h6 id="module"></h6>
+            <h6 id="id"></h6>
+        </div>
+    </div>
+
+    <script>
+        var score = 0;
+        var totalQuestions = 0;
+        var flashcards = [
+            { id: '1', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'Three interpretations of interest rate', answer: 'Denoted as <i>r</i> \n1) a required rate of return,\n 2) a discount rate, \n3) an opportunity cost. \nAn interest rate reflects the relationship between differently dated cash flows.' },
+            { id: '3', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'What goes into an interest rate?', answer: 'The sum of the real risk-free interest rate and a set of premiums that compensate lenders for bearing distinct types of risk: an inflation premium, a default risk premium, a liquidity premium, and a maturity premium.' },
+            { id: '4', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'What is the nominal risk free rate?', answer: 'The sum of the real risk-free rate and the inflation premium.' },
+            { id: '5', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'A financial asset\'s total return consists of two components. What are they?', answer: 'An income yield consisting of cash dividends or interest payments, and a return reflecting the capital gain or loss resulting from changes in the price of the financial asset.' },
+            { id: '6', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'What is a holding period return?', answer: 'The return that an investor earns for a single, specified period of time.' },
+            { id: '7', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'Multiperiod returns may be calculated across several holding periods using different return measures. What are they?', answer: 'Arithmetic mean, geometric mean, harmonic mean, trimmed mean, winsorized mean). Each return computation has special applications for evaluating investments.' },
+            { id: '8', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'The choice of which of the various alternative measurements of mean to use for a given dataset depends on what considerations?', answer: 'The presence of extreme outliers, outliers that we want to include, whether there is a symmetric distribution, and compounding.' },
+            { id: '9', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'What is a money-weighted return?', answer: 'A money-weighted return reflects the actual return earned on an investment after accounting for the value and timing of cash flows relating to the investment.' },
+            { id: '10', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'What does the nominal risk-free rate include a premium for:<br>A. maturity <br>B. risk<br>C. expected inflation', answer: 'C is correct. The nominal risk-free rate is approximated as the sum of the real risk-free interest rate and an inflation premium.' },
+            { id: '11', level: '1', volume: '1', topic: 'Quantitative Methods', module: 'Rates and Returns', question: 'Which of the following risk premiums is most relevant in explaining the difference in yiekld dsbetween 30-year bonds issued by the US Treasury and 30-Year bonds issued by small, private US coprorate issuer?<br>A. Inflation<br>B. Maturity<br>C. Liquidity', answer: 'C is correct. US Treasury bonds are highly liquid, whereas the bonds of small issuers trade infrequently and the interest rate includes a liquidity premium. This liquidity premium reflects the relatively high costs (including stuff)' },
+            {
+                id: '2',
+                level: '1',
+                volume: '1',
+                topic: 'Quantitative Methods',
+                module: 'Rates and Returns',
+                question: {
+                    text: 'Consider teh following annual return for Fun Y over the past 5 years. The geometric mean return for fun Y is closest to:',
+                    table: {
+                        headers: ['Year', 'Return %'],
+                        rows: [
+                            ['Year 1', '19.5'],
+                            ['Year 2', '-1.9'],
+                            ['Year 3', '19.7'],
+                            ['Year 4', '35.0'],
+                            ['Year 5', '5.7']
+                            // Add more rows as needed
+                        ]
+                    }
+                },
+                answer: 'A is correct. The geometric mean return for Fund Y is calculated as follows: <em>R̅</em><sub>G</sub> = [(1 + 0.195) * (1 - 0.019) * (1 + 0.197) * (1 + 0.350) * (1 + 0.057)]<sup>1/5</sup> - 1 = 14.9%'
+            },
+            { id: '12', level: '1', volume: '1', topic: 'MathJax', module: 'Rates and Returns', question: '\[ax^2 + bx + c = 0\]', answer: '\[x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}\]' },
+            // Add more flashcards as needed
+        ];
+
+        var currentCard = 0;
+
+        function generateMetadataFilters(metadata) {
+            var values = [...new Set(flashcards.map(card => card[metadata]))]; // get unique values 
+            values.sort(); // sort values
+
+            // Custom sort for 'level' metadata
+            if (metadata === 'level') {
+                values.sort((a, b) => {
+                    if (a === 'PreReq') return -1;
+                    if (b === 'PreReq') return 1;
+                    return a.localeCompare(b);
+                });
+            } else {
+                values.sort(); // sort values
+            }
+
+            var filtersDiv = document.getElementById(metadata + 'Filters');
+            filtersDiv.innerHTML = ''; // clear the div
+
+            // Add metadata name before the checkboxes
+            var metadataName = document.createElement('strong');
+            metadataName.style.display = 'inline-block'; // make the strong element inline-block
+            metadataName.innerText = capitalizeFirstLetter(metadata) + ': ';
+            filtersDiv.appendChild(metadataName);
+
+            values.forEach(value => {
+                var label = document.createElement('label');
+                label.style.display = 'inline'; // make the labels inline
+                var checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = metadata + value + 'Checkbox';
+                checkbox.checked = true;
+                checkbox.style.marginLeft = '10px'; // add a left margin to the checkbox
+                checkbox.onclick = updateNumResults; // update the number of results when a checkbox is clicked
+
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(' ' + value));
+                filtersDiv.appendChild(label);
+            });
+
+            // Add clear button
+            var clearButton = document.createElement('button');
+            clearButton.innerText = 'Clear All';
+            clearButton.style.marginLeft = '10px';    /* add a left margin to the button */
+            clearButton.style.marginBottom = '10px';  /* add a bottom margin to the button */
+
+            clearButton.onclick = function () {
+                values.forEach(value => {
+                    document.getElementById(metadata + value + 'Checkbox').checked = false;
+                });
+                updateNumResults(); // update the number of results when the "Clear All" button is clicked
+            };
+            filtersDiv.appendChild(clearButton);
+            clearButton.className = 'clearButton';
+        }
+
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        function showCard() {
+            var filteredFlashcards = [];
+
+            ['level', 'volume', 'topic', 'module'].forEach(metadata => {
+                var values = [...new Set(flashcards.map(card => card[metadata]))]; // get unique values
+                values.forEach(value => {
+                    if (document.getElementById(metadata + value + 'Checkbox').checked) {
+                        var matchingFlashcards = flashcards.filter(card => card[metadata] === value);
+                        filteredFlashcards = [...new Set([...filteredFlashcards, ...matchingFlashcards])]; // union operation
+                    }
+                });
+            });
+
+            if (filteredFlashcards.length > 0) {
+                var question = filteredFlashcards[currentCard % filteredFlashcards.length].question;
+                var questionHtml = typeof question === 'string' ? question : question.text;
+                if (question.table) {
+                    questionHtml += '<table>';
+                    questionHtml += '<tr>' + question.table.headers.map(header => '<th>' + header + '</th>').join('') + '</tr>';
+                    questionHtml += question.table.rows.map(row => '<tr>' + row.map(cell => '<td>' + cell + '</td>').join('') + '</tr>').join('');
+                    questionHtml += '</table>';
+                }
+                document.getElementById('question').innerHTML = questionHtml;
+                MathJax.typeset(); // render MathJax
+                document.getElementById('level').innerText = 'Level: ' + filteredFlashcards[currentCard % filteredFlashcards.length].level;
+                document.getElementById('volume').innerText = 'Volume: ' + filteredFlashcards[currentCard % filteredFlashcards.length].volume;
+                document.getElementById('topic').innerText = 'Topic: ' + filteredFlashcards[currentCard % filteredFlashcards.length].topic;
+                document.getElementById('module').innerText = 'Module: ' + filteredFlashcards[currentCard % filteredFlashcards.length].module;
+                document.getElementById('id').innerText = '#' + filteredFlashcards[currentCard % filteredFlashcards.length].id;
+            } else {
+                document.getElementById('question').innerText = 'No flashcards match the selected filters.';
+            }
+        }
+
+        function showAnswer() {
+            var filteredFlashcards = [];
+
+            ['level', 'volume', 'topic', 'module'].forEach(metadata => {
+                var values = [...new Set(flashcards.map(card => card[metadata]))]; // get unique values
+                values.forEach(value => {
+                    if (document.getElementById(metadata + value + 'Checkbox').checked) {
+                        var matchingFlashcards = flashcards.filter(card => card[metadata] === value);
+                        filteredFlashcards = [...new Set([...filteredFlashcards, ...matchingFlashcards])]; // union operation
+                    }
+                });
+            });
+
+
+            // Display the answer and metadata for the current flashcard if there are any filtered flashcards
+            if (filteredFlashcards.length > 0) {
+                document.getElementById('answer').innerHTML = filteredFlashcards[currentCard % filteredFlashcards.length].answer.replace(/\n/g, '<br>');
+                MathJax.typeset(); // render MathJax
+                document.getElementById('answer').style.display = 'block';
+                document.getElementById('metadata').style.display = 'block'; // show the metadata
+                document.getElementById('id').innerText = '#' + filteredFlashcards[currentCard % filteredFlashcards.length].id;
+            } else {
+                document.getElementById('answer').innerText = 'No flashcards match the selected filters.';
+            }
+            document.getElementById('correctButton').style.display = 'inline-block';
+            document.getElementById('incorrectButton').style.display = 'inline-block';
+
+        }
+
+        // Function to move to the next flashcard, hide the answer and metadata of the current card, and display the next card
+        function nextCard() {
+            currentCard = (currentCard + 1) % flashcards.length;
+            document.getElementById('answer').style.display = 'none'; // hide the answer
+            document.getElementById('metadata').style.display = 'none'; // hide the metadata
+            showCard();
+        }
+
+        // Randomize flashcards
+        flashcards.sort(() => Math.random() - 0.5);
+        // generate the checkboxes before showing the first card
+        ['level', 'volume', 'topic', 'module'].forEach(metadata => generateMetadataFilters(metadata));
+
+        showCard();
+        function updateNumResults() {
+            var filteredFlashcards = [];
+
+            ['level', 'volume', 'topic', 'module'].forEach(metadata => {
+                var values = [...new Set(flashcards.map(card => card[metadata]))]; // get unique values
+                values.forEach(value => {
+                    if (document.getElementById(metadata + value + 'Checkbox').checked) {
+                        var matchingFlashcards = flashcards.filter(card => card[metadata] === value);
+                        filteredFlashcards = [...new Set([...filteredFlashcards, ...matchingFlashcards])]; // union operation
+                    }
+                });
+            });
+            document.getElementById('numResults').innerText = filteredFlashcards.length + ' results';
+            MathJax.typeset(); // render MathJax
+
+        }
+    </script>
+</body>
+
+</html>
